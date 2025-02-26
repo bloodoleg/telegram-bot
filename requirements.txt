@@ -1,3 +1,4 @@
+nest-asyncio
 Flask
 python-telegram-bot
 
