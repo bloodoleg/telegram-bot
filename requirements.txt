@@ -1,4 +1,6 @@
+gunicorn
 nest-asyncio
 Flask
 python-telegram-bot
 
+gunicorn
