@@ -28,7 +28,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Твой токен вставлен сюда
-TOKEN = "7650990177:AAGE_MNFSCsK9WvL573GLcE56Z8LYwD4lNw"
+TOKEN = "7650990177:AAGbK924kj-8H7uX13E041kvy78u0vn_WYk"
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
