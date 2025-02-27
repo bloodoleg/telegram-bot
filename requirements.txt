@@ -1,6 +1,5 @@
-gunicorn
+python-telegram-bot[job-queue]
 nest-asyncio
-Flask
-python-telegram-bot
-
 gunicorn
+Flask
+
