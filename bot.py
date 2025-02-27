@@ -11,26 +11,23 @@ from telegram.ext import (
     ConversationHandler, ContextTypes, filters, JobQueue
 )
 
-# Вставь свой токен сюда
 TOKEN = "7650990177:AAGbK924kj-8H7uX13E041kvy78u0vn_WYk"
 
-# Создаем Flask-заглушку, чтобы Render не засыпал
+# Flask-заглушка, чтобы Render видел веб-сервис
 app = Flask(__name__)
 
 @app.route('/')
 def home():
     return "Бот працює 24/7 на Render!"
 
-# Глобальные переменные
-birthdays = {}        # Имя -> дата (мм-дд)
-ADD_BIRTHDAY = 1      # состояние ConversationHandler
+birthdays = {}   # имя -> дата (мм-дд)
+ADD_BIRTHDAY = 1 # состояние ConversationHandler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Обработчик /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Приветственное меню бота."""
     reply_keyboard = [
         ["Додати День Народження", "Список Днів Народження"],
         ["Відміна"]
@@ -46,7 +43,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Начало добавления ДР
 async def add_birthday_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Пользователь нажимает 'Додати День Народження', бот просит имя и дату."""
     reply_keyboard = [["Відміна"]]
     markup = ReplyKeyboardMarkup(reply_keyboard, resize_keyboard=True)
     await update.message.reply_text(
@@ -56,11 +52,10 @@ async def add_birthday_start(update: Update, context: ContextTypes.DEFAULT_TYPE)
     )
     return ADD_BIRTHDAY
 
-# Обработка введённых данных (имя и дата)
+# Обработка (имя + дата)
 async def add_birthday_process(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
-    # Если нажали "Відміна"
     if text == "Відміна":
         await start(update, context)
         return ConversationHandler.END
@@ -76,14 +71,12 @@ async def add_birthday_process(update: Update, context: ContextTypes.DEFAULT_TYP
 
     name, bday = parts
 
-    # Проверка формата мм-дд
     if not re.match(r"^\d{2}-\d{2}$", bday):
         await update.message.reply_text(
             "❌ Помилка! Формат дати має бути мм-дд (наприклад, 04-15)."
         )
         return ADD_BIRTHDAY
 
-    # Проверяем, что дата реальная
     try:
         datetime.datetime.strptime(bday, "%m-%d")
     except ValueError:
@@ -92,7 +85,6 @@ async def add_birthday_process(update: Update, context: ContextTypes.DEFAULT_TYP
         )
         return ADD_BIRTHDAY
 
-    # Сохраняем в словарь
     birthdays[name] = bday
     await update.message.reply_text(f"✅ День народження {name} додано!")
     return ConversationHandler.END
@@ -107,7 +99,7 @@ async def list_birthdays(update: Update, context: ContextTypes.DEFAULT_TYPE):
             msg += f"{person}: {date_}\n"
         await update.message.reply_text(msg)
 
-# Ежедневное напоминание в 9:00
+# Ежедневное напоминание
 async def birthday_reminder(context: ContextTypes.DEFAULT_TYPE):
     today = datetime.datetime.now().strftime("%m-%d")
     celebrants = [name for name, date_ in birthdays.items() if date_ == today]
@@ -125,7 +117,7 @@ async def register_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.bot_data.setdefault("chat_ids", set()).add(chat_id)
     await update.message.reply_text("✅ Ви підписалися на нагадування про дні народження!")
 
-# Функция, которая запускает Telegram-бот (polling) в отдельном потоке
+# Запуск Telegram-бота в дочернем потоке
 def run_telegram_bot():
     nest_asyncio.apply()
 
@@ -146,7 +138,7 @@ def run_telegram_bot():
     conv_handler = ConversationHandler(
         entry_points=[MessageHandler(filters.Regex("^Додати День Народження$"), add_birthday_start)],
         states={
-            ADD_BIRTHDAY: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_birthday_process)]
+            1: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_birthday_process)]
         },
         fallbacks=[MessageHandler(filters.Regex("^Відміна$"), start)],
     )
@@ -156,13 +148,13 @@ def run_telegram_bot():
     job_queue: JobQueue = app_telegram.job_queue
     job_queue.run_daily(birthday_reminder, time=datetime.time(hour=9, minute=0))
 
-    logger.info("Запускаю long polling...")
-    app_telegram.run_polling()
+    logger.info("Запускаю long polling без сигналов...")
+    # ОТКЛЮЧАЕМ обработку сигналов, чтобы не было ошибки set_wakeup_fd
+    app_telegram.run_polling(stop_signals=None)
 
-# Запускаем бота в фоновом потоке
+# Запускаем бота (polling) в потоке
 threading.Thread(target=run_telegram_bot, daemon=True).start()
 
-# Запуск Flask
+# Запуск Flask (в главном потоке)
 if __name__ == "__main__":
-    # Flask слушает порт 10000, чтобы Render видел веб-сервис
     app.run(host="0.0.0.0", port=10000)
