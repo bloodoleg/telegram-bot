@@ -13,7 +13,7 @@ from telegram.ext import (
 # -----------------------
 # Константы и глобальные переменные
 # -----------------------
-TOKEN = "ЗДЕСЬ_УКАЖИ_СВОЙ_ТОКЕН"  # Вставь сюда токен от BotFather
+TOKEN = "7650990177:AAGbK924kj-8H7uX13E041kvy78u0vn_WYk"  # Вставь сюда токен от BotFather
 ADD_BIRTHDAY = 1  # Состояние ConversationHandler
 birthdays = {}    # Словарь для хранения дней рождения (имя -> дата)
 
